@@ -18,13 +18,21 @@ import java.util.List;
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
 public class TarefaResource {
-    @Inject TarefaService tarefaService;
-    @Context UriInfo uriInfo;
+    @Inject
+    TarefaService tarefaService;
+    @Context
+    UriInfo uriInfo;
 
-    @GET public List<TarefaResponse> listar() { return tarefaService.listar(); }
+    @GET
+    public List<TarefaResponse> listar() {
+        return tarefaService.listar();
+    }
 
-    @GET @Path("/{id}")
-    public TarefaResponse buscar(@PathParam("id") long id) { return tarefaService.buscar(id); }
+    @GET
+    @Path("/{id}")
+    public TarefaResponse buscar(@PathParam("id") long id) {
+        return tarefaService.buscar(id);
+    }
 
     @POST
     public Response criar(@Valid TarefaRequest request) {
@@ -33,12 +41,14 @@ public class TarefaResource {
         return Response.created(location).entity(criada).build();
     }
 
-    @PUT @Path("/{id}")
+    @PUT
+    @Path("/{id}")
     public TarefaResponse atualizar(@PathParam("id") long id, @Valid TarefaRequest request) {
         return tarefaService.atualizar(id, request);
     }
 
-    @DELETE @Path("/{id}")
+    @DELETE
+    @Path("/{id}")
     public Response excluir(@PathParam("id") long id) {
         tarefaService.excluir(id);
         return Response.noContent().build();

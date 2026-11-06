@@ -1,9 +1,11 @@
 package aula.ada.service;
 
+import aula.ada.client.PrioridadeGateway;
 import aula.ada.domain.StatusTarefa;
 import aula.ada.dto.TarefaRequest;
 import aula.ada.dto.TarefaResponse;
 import aula.ada.entity.TarefaEntity;
+import aula.ada.platform.metrics.TarefaMetrics;
 import aula.ada.repository.TarefaRepository;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -16,6 +18,12 @@ public class TarefaService {
 
     @Inject
     TarefaRepository tarefaRepository;
+
+    @Inject
+    PrioridadeGateway prioridadeGateway;
+
+    @Inject
+    TarefaMetrics metrics;
 
     public List<TarefaResponse> listar() {
         return tarefaRepository.listAll().stream()
@@ -31,9 +39,23 @@ public class TarefaService {
 
     @Transactional
     public TarefaResponse criar(TarefaRequest request) {
-        TarefaEntity entity = TarefaEntity.from(request);
+        TarefaRequest efetivo = comPrioridadeSugerida(request);
+        TarefaEntity entity = TarefaEntity.from(efetivo);
         tarefaRepository.persist(entity);
+        metrics.tarefaCriada();
         return entity.toResponse();
+    }
+
+    private TarefaRequest comPrioridadeSugerida(TarefaRequest request) {
+        if (request.getPrioridade() != null) {
+            return request;
+        }
+        return TarefaRequest.builder()
+                .titulo(request.getTitulo())
+                .descricao(request.getDescricao())
+                .status(request.getStatus())
+                .prioridade(prioridadeGateway.sugerir(request.getTitulo()))
+                .build();
     }
 
     @Transactional

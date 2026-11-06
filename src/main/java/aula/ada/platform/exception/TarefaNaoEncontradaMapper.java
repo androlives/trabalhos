@@ -1,4 +1,4 @@
-package aula.ada.rest;
+package aula.ada.platform.exception;
 
 import aula.ada.service.TarefaNaoEncontradaException;
 import aula.ada.dto.ErroResponse;

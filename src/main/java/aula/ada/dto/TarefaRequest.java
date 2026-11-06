@@ -6,7 +6,11 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.*;
 
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class TarefaRequest {
     @NotBlank(message = "O título não pode estar em branco")
     @Size(min = 3, max = 100, message = "O título deve possuir entre 3 e 100 caracteres")
