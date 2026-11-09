@@ -1,1047 +1,531 @@
 {
   "info": {
-    "name": "Controle de Tarefas",
-    "description": "Requisições para reproduzir as demonstrações dos 16 requisitos. Execute os comandos na raiz do projeto (pasta do pom.xml). Suba a API: ./mvnw quarkus:dev. O mock nao sobe automaticamente com a API e deve ser iniciado em outro terminal: Linux/macOS -> java mock/PrioridadeMock.java ; Windows (cmd.exe) -> java mock\\PrioridadeMock.java 8089. Na pasta 4, rode o primeiro request com mock UP; depois encerre o mock (Ctrl+C) e rode o segundo para validar o fallback.",
+    "name": "Controle de Tarefas — Demonstração",
+    "description": "16 requisitos organizados em 5 seções. Suba a API (./mvnw quarkus:dev) e o controlador do mock em outro terminal (java mock/MockController.java 8090). Cada pasta agrupa um bloco de requisitos. Os nomes estão numerados na ordem de execução — rode de cima para baixo para reproduzir a demo completa.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
-    {
-      "key": "baseUrl",
-      "value": "http://localhost:8080"
-    },
-    {
-      "key": "tarefaId",
-      "value": ""
-    },
-    {
-      "key": "tarefaRegraId",
-      "value": ""
-    },
-    {
-      "key": "metricaAntes",
-      "value": "0"
-    }
+    { "key": "baseUrl", "value": "http://localhost:8080" },
+    { "key": "mockControllerUrl", "value": "http://localhost:8090" },
+    { "key": "tarefaId", "value": "" },
+    { "key": "tarefaRegraId", "value": "" },
+    { "key": "metricaAntes", "value": "0" }
   ],
   "item": [
     {
       "name": "1. CRUD e transações",
-      "description": "Roteiro obrigatório: POST cria; GET recupera; PUT altera; segundo GET comprova; DELETE remove; GET final retorna 404.",
+      "description": "Req 01, 02, 12, 13 — Ciclo completo: POST cria (201 + Location) → GET lista e busca → PUT altera → GET confirma alteração → DELETE remove → GET confirma 404.",
       "item": [
         {
-          "name": "POST criar tarefa (201 + Location)",
+          "name": "1.1 POST criar tarefa (201 + Location)",
           "request": {
             "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/tarefas",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "tarefas"
-              ]
-            },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/tarefas", "host": ["{{baseUrl}}"], "path": ["tarefas"] },
+            "description": "Cria tarefa com prioridade ALTA. Testa 201, header Location e status inicial ABERTA. Salva o id em {{tarefaId}}.",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"titulo\": \"Estudar Quarkus\",\n  \"descricao\": \"Revisar aulas 01 a 06\",\n  \"prioridade\": \"ALTA\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
+              "options": { "raw": { "language": "json" } }
             }
           },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
-                  "pm.test('Header Location presente', () => pm.response.to.have.header('Location'));",
-                  "const j = pm.response.json(); pm.collectionVariables.set('tarefaId', j.id);",
-                  "pm.test('Status inicial ABERTA', () => pm.expect(j.status).to.eql('ABERTA'));"
-                ]
-              }
-            }
-          ]
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Status 201', () => pm.response.to.have.status(201));",
+            "pm.test('Header Location presente', () => pm.response.to.have.header('Location'));",
+            "const j = pm.response.json(); pm.collectionVariables.set('tarefaId', j.id);",
+            "pm.test('Status inicial ABERTA', () => pm.expect(j.status).to.eql('ABERTA'));"
+          ]}}]
         },
         {
-          "name": "GET listar tarefas (200)",
+          "name": "1.2 GET listar tarefas (200)",
           "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/tarefas",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "tarefas"
-              ]
-            }
+            "method": "GET", "header": [],
+            "url": { "raw": "{{baseUrl}}/tarefas", "host": ["{{baseUrl}}"], "path": ["tarefas"] },
+            "description": "Lista todas as tarefas. Testa 200 e que o corpo é um array."
           },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
-                  "pm.test('Corpo é uma lista', () => pm.expect(pm.response.json()).to.be.an('array'));"
-                ]
-              }
-            }
-          ]
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "pm.test('Corpo é uma lista', () => pm.expect(pm.response.json()).to.be.an('array'));"
+          ]}}]
         },
         {
-          "name": "GET tarefa por ID (200)",
+          "name": "1.3 GET buscar por ID (200)",
           "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/tarefas/{{tarefaId}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "tarefas",
-                "{{tarefaId}}"
-              ]
-            }
+            "method": "GET", "header": [],
+            "url": { "raw": "{{baseUrl}}/tarefas/{{tarefaId}}", "host": ["{{baseUrl}}"], "path": ["tarefas", "{{tarefaId}}"] },
+            "description": "Busca a tarefa criada em 1.1. Testa 200 e o título original."
           },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
-                  "pm.test('Título original', () => pm.expect(pm.response.json().titulo).to.eql('Estudar Quarkus'));"
-                ]
-              }
-            }
-          ]
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "pm.test('Título original', () => pm.expect(pm.response.json().titulo).to.eql('Estudar Quarkus'));"
+          ]}}]
         },
         {
-          "name": "PUT alterar tarefa (200)",
+          "name": "1.4 PUT alterar tarefa (200)",
           "request": {
             "method": "PUT",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/tarefas/{{tarefaId}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "tarefas",
-                "{{tarefaId}}"
-              ]
-            },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/tarefas/{{tarefaId}}", "host": ["{{baseUrl}}"], "path": ["tarefas", "{{tarefaId}}"] },
+            "description": "Altera título e status para EM_ANDAMENTO. Testa 200.",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"titulo\": \"Estudar Quarkus (alterado)\",\n  \"descricao\": \"Revisar aulas 01 a 06\",\n  \"status\": \"EM_ANDAMENTO\",\n  \"prioridade\": \"ALTA\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
+              "options": { "raw": { "language": "json" } }
             }
           },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status 200', () => pm.response.to.have.status(200));"
-                ]
-              }
-            }
-          ]
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));"
+          ]}}]
         },
         {
-          "name": "GET por ID confirma o PUT (200)",
+          "name": "1.5 GET confirmar alteração (200)",
           "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/tarefas/{{tarefaId}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "tarefas",
-                "{{tarefaId}}"
-              ]
-            }
+            "method": "GET", "header": [],
+            "url": { "raw": "{{baseUrl}}/tarefas/{{tarefaId}}", "host": ["{{baseUrl}}"], "path": ["tarefas", "{{tarefaId}}"] },
+            "description": "Busca de novo para provar que o PUT persistiu (título e status mudaram)."
           },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
-                  "const j = pm.response.json();",
-                  "pm.test('PUT refletido no GET', () => { pm.expect(j.titulo).to.eql('Estudar Quarkus (alterado)'); pm.expect(j.status).to.eql('EM_ANDAMENTO'); });"
-                ]
-              }
-            }
-          ]
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "const j = pm.response.json();",
+            "pm.test('PUT refletido no GET', () => { pm.expect(j.titulo).to.eql('Estudar Quarkus (alterado)'); pm.expect(j.status).to.eql('EM_ANDAMENTO'); });"
+          ]}}]
         },
         {
-          "name": "DELETE tarefa (204)",
+          "name": "1.6 DELETE excluir tarefa (204)",
           "request": {
-            "method": "DELETE",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/tarefas/{{tarefaId}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "tarefas",
-                "{{tarefaId}}"
-              ]
-            }
+            "method": "DELETE", "header": [],
+            "url": { "raw": "{{baseUrl}}/tarefas/{{tarefaId}}", "host": ["{{baseUrl}}"], "path": ["tarefas", "{{tarefaId}}"] },
+            "description": "Remove a tarefa. Testa 204 (No Content), sem corpo."
           },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status 204', () => pm.response.to.have.status(204));"
-                ]
-              }
-            }
-          ]
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Status 204', () => pm.response.to.have.status(204));"
+          ]}}]
         },
         {
-          "name": "GET após DELETE (404)",
+          "name": "1.7 GET confirmar exclusão (404)",
           "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/tarefas/{{tarefaId}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "tarefas",
-                "{{tarefaId}}"
-              ]
-            }
+            "method": "GET", "header": [],
+            "url": { "raw": "{{baseUrl}}/tarefas/{{tarefaId}}", "host": ["{{baseUrl}}"], "path": ["tarefas", "{{tarefaId}}"] },
+            "description": "Busca o id já removido. Testa 404 com codigo=TAREFA_NAO_ENCONTRADA."
           },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status 404', () => pm.response.to.have.status(404));",
-                  "pm.test('codigo TAREFA_NAO_ENCONTRADA', () => pm.expect(pm.response.json().codigo).to.eql('TAREFA_NAO_ENCONTRADA'));"
-                ]
-              }
-            }
-          ]
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Status 404', () => pm.response.to.have.status(404));",
+            "pm.test('codigo TAREFA_NAO_ENCONTRADA', () => pm.expect(pm.response.json().codigo).to.eql('TAREFA_NAO_ENCONTRADA'));"
+          ]}}]
         }
       ]
     },
     {
       "name": "2. Regra de negócio",
-      "description": "Tarefa CANCELADA não pode ir para CONCLUIDA (409).",
+      "description": "Req 05, 15 — Tarefa CANCELADA não pode virar CONCLUIDA. Prova que a regra está no service (não no resource) e que o mapper devolve 409 com envelope padronizado.",
       "item": [
         {
-          "name": "POST criar tarefa para a regra (201)",
+          "name": "2.1 POST criar tarefa ABERTA (setup 409)",
           "request": {
             "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/tarefas",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "tarefas"
-              ]
-            },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/tarefas", "host": ["{{baseUrl}}"], "path": ["tarefas"] },
+            "description": "Cria tarefa com prioridade BAIXA para ser cancelada em 2.2. Salva id em {{tarefaRegraId}}.",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"titulo\": \"Tarefa da regra\",\n  \"prioridade\": \"BAIXA\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
+              "options": { "raw": { "language": "json" } }
             }
           },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
-                  "pm.collectionVariables.set('tarefaRegraId', pm.response.json().id);"
-                ]
-              }
-            }
-          ]
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Status 201', () => pm.response.to.have.status(201));",
+            "pm.collectionVariables.set('tarefaRegraId', pm.response.json().id);"
+          ]}}]
         },
         {
-          "name": "PUT cancelar (200)",
+          "name": "2.2 PUT cancelar tarefa (200)",
           "request": {
             "method": "PUT",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/tarefas/{{tarefaRegraId}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "tarefas",
-                "{{tarefaRegraId}}"
-              ]
-            },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/tarefas/{{tarefaRegraId}}", "host": ["{{baseUrl}}"], "path": ["tarefas", "{{tarefaRegraId}}"] },
+            "description": "Muda status para CANCELADA — transição válida (ABERTA → CANCELADA). Retorna 200.",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"titulo\": \"Tarefa da regra\",\n  \"status\": \"CANCELADA\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
+              "options": { "raw": { "language": "json" } }
             }
           },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status 200', () => pm.response.to.have.status(200));"
-                ]
-              }
-            }
-          ]
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));"
+          ]}}]
         },
         {
-          "name": "PUT concluir tarefa cancelada (409)",
+          "name": "2.3 PUT tentar concluir cancelada (409)",
           "request": {
             "method": "PUT",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/tarefas/{{tarefaRegraId}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "tarefas",
-                "{{tarefaRegraId}}"
-              ]
-            },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/tarefas/{{tarefaRegraId}}", "host": ["{{baseUrl}}"], "path": ["tarefas", "{{tarefaRegraId}}"] },
+            "description": "Tenta CANCELADA → CONCLUIDA. Prova a regra de negócio: 409 com TRANSICAO_TAREFA_INVALIDA e envelope padronizado.",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"titulo\": \"Tarefa da regra\",\n  \"status\": \"CONCLUIDA\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
+              "options": { "raw": { "language": "json" } }
             }
           },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status 409', () => pm.response.to.have.status(409));",
-                  "const j = pm.response.json();",
-                  "pm.test('Erro padronizado', () => { pm.expect(j.codigo).to.eql('TRANSICAO_TAREFA_INVALIDA'); pm.expect(j.mensagem).to.be.a('string'); pm.expect(j.timestamp).to.be.a('string'); });"
-                ]
-              }
-            }
-          ]
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Status 409', () => pm.response.to.have.status(409));",
+            "const j = pm.response.json();",
+            "pm.test('Erro padronizado', () => { pm.expect(j.codigo).to.eql('TRANSICAO_TAREFA_INVALIDA'); pm.expect(j.mensagem).to.be.a('string'); pm.expect(j.timestamp).to.be.a('string'); });"
+          ]}}]
         },
         {
-          "name": "DELETE limpar (204)",
+          "name": "2.4 DELETE limpar tarefa (204)",
           "request": {
-            "method": "DELETE",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/tarefas/{{tarefaRegraId}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "tarefas",
-                "{{tarefaRegraId}}"
-              ]
-            }
+            "method": "DELETE", "header": [],
+            "url": { "raw": "{{baseUrl}}/tarefas/{{tarefaRegraId}}", "host": ["{{baseUrl}}"], "path": ["tarefas", "{{tarefaRegraId}}"] },
+            "description": "Remove a tarefa da regra para não poluir o banco."
           },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status 204', () => pm.response.to.have.status(204));"
-                ]
-              }
-            }
-          ]
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Status 204', () => pm.response.to.have.status(204));"
+          ]}}]
         }
       ]
     },
     {
       "name": "3. Validação e erros",
-      "description": "400 e 404 compartilham o mesmo formato: codigo, mensagem, timestamp (e detalhes na validação).",
+      "description": "Req 14, 16 — 400/404/409 compartilham o mesmo envelope: {codigo, mensagem, timestamp} (+ detalhes[] na validação).",
       "item": [
         {
-          "name": "POST título vazio (400)",
+          "name": "3.1 POST título vazio (400 VALIDACAO_INVALIDA)",
           "request": {
             "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/tarefas",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "tarefas"
-              ]
-            },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/tarefas", "host": ["{{baseUrl}}"], "path": ["tarefas"] },
+            "description": "Violação de @NotBlank. Testa 400 com codigo=VALIDACAO_INVALIDA e detalhes[] não vazio.",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"titulo\": \"\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
+              "options": { "raw": { "language": "json" } }
             }
           },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status 400', () => pm.response.to.have.status(400));",
-                  "const j = pm.response.json();",
-                  "pm.test('Formato padronizado', () => { pm.expect(j.codigo).to.eql('VALIDACAO_INVALIDA'); pm.expect(j.mensagem).to.be.a('string'); pm.expect(j.timestamp).to.be.a('string'); pm.expect(j.detalhes).to.be.an('array').that.is.not.empty; });"
-                ]
-              }
-            }
-          ]
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Status 400', () => pm.response.to.have.status(400));",
+            "const j = pm.response.json();",
+            "pm.test('Formato padronizado', () => { pm.expect(j.codigo).to.eql('VALIDACAO_INVALIDA'); pm.expect(j.mensagem).to.be.a('string'); pm.expect(j.timestamp).to.be.a('string'); pm.expect(j.detalhes).to.be.an('array').that.is.not.empty; });"
+          ]}}]
         },
         {
-          "name": "POST título curto (400)",
+          "name": "3.2 POST título curto (400 VALIDACAO_INVALIDA)",
           "request": {
             "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/tarefas",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "tarefas"
-              ]
-            },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/tarefas", "host": ["{{baseUrl}}"], "path": ["tarefas"] },
+            "description": "Violação de @Size(min=3). Título com 2 caracteres. Testa 400 com detalhes[].",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"titulo\": \"ab\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
+              "options": { "raw": { "language": "json" } }
             }
           },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status 400', () => pm.response.to.have.status(400));",
-                  "pm.test('Possui detalhes', () => pm.expect(pm.response.json().detalhes.length).to.be.above(0));"
-                ]
-              }
-            }
-          ]
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Status 400', () => pm.response.to.have.status(400));",
+            "pm.test('Possui detalhes', () => pm.expect(pm.response.json().detalhes.length).to.be.above(0));"
+          ]}}]
         },
         {
-          "name": "POST enum inválido (400)",
+          "name": "3.3 POST enum inválido (400 CORPO_INVALIDO)",
           "request": {
             "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/tarefas",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "tarefas"
-              ]
-            },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/tarefas", "host": ["{{baseUrl}}"], "path": ["tarefas"] },
+            "description": "status=XPTO não desserializa no enum. Testa 400 com o MESMO envelope (prova o CorpoInvalidoMapper + disable-mapper-for).",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"titulo\": \"Teste\",\n  \"status\": \"XPTO\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
+              "options": { "raw": { "language": "json" } }
             }
           },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status 400', () => pm.response.to.have.status(400));",
-                  "const j = pm.response.json();",
-                  "pm.test('Mesmo formato de erro', () => { pm.expect(j.codigo).to.be.a('string'); pm.expect(j.mensagem).to.be.a('string'); pm.expect(j.timestamp).to.be.a('string'); });"
-                ]
-              }
-            }
-          ]
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Status 400', () => pm.response.to.have.status(400));",
+            "const j = pm.response.json();",
+            "pm.test('Mesmo formato de erro', () => { pm.expect(j.codigo).to.be.a('string'); pm.expect(j.mensagem).to.be.a('string'); pm.expect(j.timestamp).to.be.a('string'); });"
+          ]}}]
         },
         {
-          "name": "GET ID inexistente (404)",
+          "name": "3.4 GET ID inexistente (404 TAREFA_NAO_ENCONTRADA)",
           "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/tarefas/999999",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "tarefas",
-                "999999"
-              ]
-            }
+            "method": "GET", "header": [],
+            "url": { "raw": "{{baseUrl}}/tarefas/999999", "host": ["{{baseUrl}}"], "path": ["tarefas", "999999"] },
+            "description": "ID que não existe. Testa 404 com codigo=TAREFA_NAO_ENCONTRADA — mesmo envelope dos outros erros."
           },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status 404', () => pm.response.to.have.status(404));",
-                  "const j = pm.response.json();",
-                  "pm.test('Mesmo formato de erro', () => { pm.expect(j.codigo).to.eql('TAREFA_NAO_ENCONTRADA'); pm.expect(j.mensagem).to.be.a('string'); pm.expect(j.timestamp).to.be.a('string'); });"
-                ]
-              }
-            }
-          ]
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Status 404', () => pm.response.to.have.status(404));",
+            "const j = pm.response.json();",
+            "pm.test('Mesmo formato de erro', () => { pm.expect(j.codigo).to.eql('TAREFA_NAO_ENCONTRADA'); pm.expect(j.mensagem).to.be.a('string'); pm.expect(j.timestamp).to.be.a('string'); });"
+          ]}}]
         }
       ]
     },
     {
-      "name": "4. Integração externa",
-      "description": "Mock em processo separado, porta 8089: Linux/macOS -> java mock/PrioridadeMock.java ; Windows (cmd.exe) -> java mock\\PrioridadeMock.java 8089. Execute o primeiro request com mock UP e, depois de encerrar o mock (Ctrl+C), execute o segundo para validar fallback MEDIA.",
+      "name": "4. Integração externa (mock + fallback)",
+      "description": "Req 06, 09 — O mock é um processo separado. O controlador (:8090) liga/mata o mock via Postman. Roteiro: mock UP → ALTA; mock DOWN → MEDIA (fallback); cliente decide → BAIXA.",
       "item": [
         {
-          "name": "GET mock direto (diagnóstico 8089)",
+          "name": "4.1 PUT ligar o mock(MockerController deve estar startado)",
           "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "http://localhost:8089/prioridades/sugestao?titulo=bug%20urgente",
-              "protocol": "http",
-              "host": [
-                "localhost"
-              ],
-              "port": "8089",
-              "path": [
-                "prioridades",
-                "sugestao"
-              ],
-              "query": [
-                {
-                  "key": "titulo",
-                  "value": "bug urgente"
-                }
-              ]
-            }
+            "method": "PUT", "header": [],
+            "url": { "raw": "{{mockControllerUrl}}/mock/up", "host": ["{{mockControllerUrl}}"], "path": ["mock", "up"] },
+            "description": "Setup — o Controlador spawna o PrioridadeMock em :8089. Aceita UP ou UP_ALREADY."
           },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
-                  "const j = pm.response.json();",
-                  "pm.test('Mock respondeu prioridade', () => pm.expect(j.prioridade).to.be.oneOf(['ALTA', 'MEDIA', 'BAIXA']));",
-                  "pm.test('Origem mock', () => pm.expect(j.origem).to.eql('mock'));"
-                ]
-              }
-            }
-          ]
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "const j = pm.response.json();",
+            "pm.test('Mock ligado', () => pm.expect(j.mock).to.be.oneOf(['UP', 'UP_ALREADY']));"
+          ]}}]
         },
         {
-          "name": "POST sem prioridade, mock UP (espera ALTA)",
+          "name": "4.2 GET mock/status #1 (confirmar UP)",
+          "request": {
+            "method": "GET", "header": [],
+            "url": { "raw": "{{mockControllerUrl}}/mock/status", "host": ["{{mockControllerUrl}}"], "path": ["mock", "status"] },
+            "description": "Verificação — confirma que o mock está UP antes do próximo teste."
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "const j = pm.response.json();",
+            "pm.test('Estado UP', () => pm.expect(j.mock).to.eql('UP'));"
+          ]}}]
+        },
+        {
+          "name": "4.3 GET mock direto (diagnóstico :8089)",
+          "request": {
+            "method": "GET", "header": [],
+            "url": {
+              "raw": "http://localhost:8089/prioridades/sugestao?titulo=bug%20urgente",
+              "protocol": "http", "host": ["localhost"], "port": "8089",
+              "path": ["prioridades", "sugestao"],
+              "query": [{ "key": "titulo", "value": "bug urgente" }]
+            },
+            "description": "Bate DIRETO no mock, sem passar pela API. Isola 'mock funciona' de 'API fala com o mock'. Espera ALTA."
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "const j = pm.response.json();",
+            "pm.test('Prioridade válida', () => pm.expect(j.prioridade).to.be.oneOf(['ALTA', 'MEDIA', 'BAIXA']));",
+            "pm.test('Origem mock', () => pm.expect(j.origem).to.eql('mock'));"
+          ]}}]
+        },
+        {
+          "name": "4.4 POST sem prioridade, mock UP (201 ALTA)",
           "request": {
             "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/tarefas",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "tarefas"
-              ]
-            },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/tarefas", "host": ["{{baseUrl}}"], "path": ["tarefas"] },
+            "description": "Caminho feliz — a API consulta o mock (título tem 'urgente'), mock responde ALTA, API devolve ALTA. Prova que a integração funciona.",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"titulo\": \"Corrigir bug urgente\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
+              "options": { "raw": { "language": "json" } }
             }
           },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
-                  "const j = pm.response.json();",
-                  "pm.test('Prioridade veio do serviço externo', () => pm.expect(j.prioridade).to.eql('ALTA'));"
-                ]
-              }
-            }
-          ]
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Status 201', () => pm.response.to.have.status(201));",
+            "const j = pm.response.json();",
+            "pm.test('Prioridade veio do mock', () => pm.expect(j.prioridade).to.eql('ALTA'));"
+          ]}}]
         },
         {
-          "name": "POST sem prioridade, mock DOWN (fallback MEDIA)",
+          "name": "4.5 PUT mock/down (matar o mock)",
+          "request": {
+            "method": "PUT", "header": [],
+            "url": { "raw": "{{mockControllerUrl}}/mock/down", "host": ["{{mockControllerUrl}}"], "path": ["mock", "down"] },
+            "description": "Setup — o Controlador executa Process.destroy() e mata o processo do mock (mesmo efeito do Ctrl+C). Aceita DOWN ou DOWN_ALREADY."
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "const j = pm.response.json();",
+            "pm.test('Mock desligado', () => pm.expect(j.mock).to.be.oneOf(['DOWN', 'DOWN_ALREADY']));"
+          ]}}]
+        },
+        {
+          "name": "4.6 GET mock/status #2 (confirmar DOWN)",
+          "request": {
+            "method": "GET", "header": [],
+            "url": { "raw": "{{mockControllerUrl}}/mock/status", "host": ["{{mockControllerUrl}}"], "path": ["mock", "status"] },
+            "description": "Verificação — confirma que o processo morreu de verdade (porta :8089 fechada)."
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "const j = pm.response.json();",
+            "pm.test('Estado DOWN', () => pm.expect(j.mock).to.eql('DOWN'));"
+          ]}}]
+        },
+        {
+          "name": "4.7 POST sem prioridade, mock DOWN (201 MEDIA — fallback)",
           "request": {
             "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/tarefas",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "tarefas"
-              ]
-            },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/tarefas", "host": ["{{baseUrl}}"], "path": ["tarefas"] },
+            "description": "Fallback — ConnectException → @Retry 3x → @Fallback MEDIA. Título tem 'urgente' (mock daria ALTA), mas mock morto → MEDIA. A diferença ALTA (4.4) → MEDIA (4.7) é a prova.",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"titulo\": \"Corrigir bug urgente com mock desligado\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
+              "options": { "raw": { "language": "json" } }
             }
           },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
-                  "pm.test('Fallback aplicado', () => pm.expect(pm.response.json().prioridade).to.eql('MEDIA'));",
-                  "pm.test('Resposta controlada, sem erro 5xx', () => pm.expect(pm.response.code).to.be.below(500));"
-                ]
-              }
-            }
-          ]
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Status 201', () => pm.response.to.have.status(201));",
+            "pm.test('Fallback MEDIA aplicado', () => pm.expect(pm.response.json().prioridade).to.eql('MEDIA'));",
+            "pm.test('Sem erro 5xx', () => pm.expect(pm.response.code).to.be.below(500));"
+          ]}}]
         },
         {
-          "name": "POST com prioridade informada (não consulta o serviço)",
+          "name": "4.8 PUT mock/up (restaurar)",
+          "request": {
+            "method": "PUT", "header": [],
+            "url": { "raw": "{{mockControllerUrl}}/mock/up", "host": ["{{mockControllerUrl}}"], "path": ["mock", "up"] },
+            "description": "Cleanup — religa o mock para as próximas seções (5.1+). Aceita UP ou UP_ALREADY."
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "const j = pm.response.json();",
+            "pm.test('Mock religado', () => pm.expect(j.mock).to.be.oneOf(['UP', 'UP_ALREADY']));"
+          ]}}]
+        },
+        {
+          "name": "4.9 POST com prioridade informada (201 BAIXA — cliente decide)",
           "request": {
             "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/tarefas",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "tarefas"
-              ]
-            },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/tarefas", "host": ["{{baseUrl}}"], "path": ["tarefas"] },
+            "description": "Autonomia — cliente informa prioridade BAIXA. O if no TarefaService faz return antecipado, o Gateway NEM é chamado, o mock é ignorado. Prova que a prioridade do cliente vence.",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"titulo\": \"Prioridade explícita\",\n  \"prioridade\": \"BAIXA\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
+              "options": { "raw": { "language": "json" } }
             }
           },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
-                  "pm.test('Prioridade mantida', () => pm.expect(pm.response.json().prioridade).to.eql('BAIXA'));"
-                ]
-              }
-            }
-          ]
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Status 201', () => pm.response.to.have.status(201));",
+            "pm.test('Prioridade do cliente mantida', () => pm.expect(pm.response.json().prioridade).to.eql('BAIXA'));"
+          ]}}]
         }
       ]
     },
     {
       "name": "5. Health e métricas",
-      "description": "Liveness x readiness e contador tarefas_criadas_total antes/depois.",
+      "description": "Req 08, 10 — Liveness × Readiness independentes + métrica de negócio (tarefas_criadas_total) incrementa +1 após criação bem-sucedida.",
       "item": [
         {
-          "name": "GET liveness (200 UP)",
+          "name": "5.1 GET liveness (200 UP)",
           "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/q/health/live",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "q",
-                "health",
-                "live"
-              ]
-            }
+            "method": "GET", "header": [],
+            "url": { "raw": "{{baseUrl}}/q/health/live", "host": ["{{baseUrl}}"], "path": ["q", "health", "live"] },
+            "description": "Estado inicial — processo vivo. Testa 200 UP."
           },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
-                  "pm.test('UP', () => pm.expect(pm.response.json().status).to.eql('UP'));"
-                ]
-              }
-            }
-          ]
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "pm.test('UP', () => pm.expect(pm.response.json().status).to.eql('UP'));"
+          ]}}]
         },
         {
-          "name": "GET readiness (200 UP)",
+          "name": "5.2 GET readiness (200 UP)",
           "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/q/health/ready",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "q",
-                "health",
-                "ready"
-              ]
-            }
+            "method": "GET", "header": [],
+            "url": { "raw": "{{baseUrl}}/q/health/ready", "host": ["{{baseUrl}}"], "path": ["q", "health", "ready"] },
+            "description": "Estado inicial — API pronta para tráfego. Testa 200 UP."
           },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
-                  "pm.test('UP', () => pm.expect(pm.response.json().status).to.eql('UP'));"
-                ]
-              }
-            }
-          ]
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "pm.test('UP', () => pm.expect(pm.response.json().status).to.eql('UP'));"
+          ]}}]
         },
         {
-          "name": "PUT readiness DOWN",
+          "name": "5.3 PUT /admin/readiness/down (200)",
           "request": {
-            "method": "PUT",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/admin/readiness/down",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "admin",
-                "readiness",
-                "down"
-              ]
-            }
+            "method": "PUT", "header": [],
+            "url": { "raw": "{{baseUrl}}/admin/readiness/down", "host": ["{{baseUrl}}"], "path": ["admin", "readiness", "down"] },
+            "description": "Derruba o readiness (só muda um AtomicBoolean). NÃO toca no mock. Prepara o teste de independência."
           },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status 200', () => pm.response.to.have.status(200));"
-                ]
-              }
-            }
-          ]
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));"
+          ]}}]
         },
         {
-          "name": "GET readiness (503 DOWN)",
+          "name": "5.4 GET readiness após down (503 DOWN)",
           "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/q/health/ready",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "q",
-                "health",
-                "ready"
-              ]
-            }
+            "method": "GET", "header": [],
+            "url": { "raw": "{{baseUrl}}/q/health/ready", "host": ["{{baseUrl}}"], "path": ["q", "health", "ready"] },
+            "description": "Prova que o readiness caiu. Testa 503 DOWN."
           },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status 503', () => pm.response.to.have.status(503));",
-                  "pm.test('DOWN', () => pm.expect(pm.response.json().status).to.eql('DOWN'));"
-                ]
-              }
-            }
-          ]
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Status 503', () => pm.response.to.have.status(503));",
+            "pm.test('DOWN', () => pm.expect(pm.response.json().status).to.eql('DOWN'));"
+          ]}}]
         },
         {
-          "name": "GET liveness continua 200",
+          "name": "5.5 GET liveness após readiness down (200 UP — independência)",
           "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/q/health/live",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "q",
-                "health",
-                "live"
-              ]
-            }
+            "method": "GET", "header": [],
+            "url": { "raw": "{{baseUrl}}/q/health/live", "host": ["{{baseUrl}}"], "path": ["q", "health", "live"] },
+            "description": "PROVA A INDEPENDÊNCIA — readiness caiu (5.4), mas liveness continua UP. É o requisito 08."
           },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status 200', () => pm.response.to.have.status(200));"
-                ]
-              }
-            }
-          ]
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "pm.test('Liveness continua UP', () => pm.expect(pm.response.json().status).to.eql('UP'));"
+          ]}}]
         },
         {
-          "name": "PUT readiness UP (restaura)",
+          "name": "5.6 PUT /admin/readiness/up (200 — restaurar)",
           "request": {
-            "method": "PUT",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/admin/readiness/up",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "admin",
-                "readiness",
-                "up"
-              ]
-            }
+            "method": "PUT", "header": [],
+            "url": { "raw": "{{baseUrl}}/admin/readiness/up", "host": ["{{baseUrl}}"], "path": ["admin", "readiness", "up"] },
+            "description": "Restaura o readiness (housekeeping para as próximas demos)."
           },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status 200', () => pm.response.to.have.status(200));"
-                ]
-              }
-            }
-          ]
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));"
+          ]}}]
         },
         {
-          "name": "GET métrica ANTES",
+          "name": "5.7 GET métricas — ler contador antes",
           "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/q/metrics",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "q",
-                "metrics"
-              ]
-            }
+            "method": "GET", "header": [],
+            "url": { "raw": "{{baseUrl}}/q/metrics", "host": ["{{baseUrl}}"], "path": ["q", "metrics"] },
+            "description": "Setup — lê tarefas_criadas_total e salva em {{metricaAntes}} para comparar em 5.9."
           },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
-                  "const m = pm.response.text().match(/^tarefas_criadas_total(?:\\{[^}]*\\})?\\s+([0-9.eE+-]+)/m);",
-                  "pm.collectionVariables.set('metricaAntes', m ? m[1] : '0');",
-                  "console.log('tarefas_criadas_total antes =', m ? m[1] : '0');"
-                ]
-              }
-            }
-          ]
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "const m = pm.response.text().match(/^tarefas_criadas_total(?:\\{[^}]*\\})?\\s+([0-9.eE+-]+)/m);",
+            "pm.collectionVariables.set('metricaAntes', m ? m[1] : '0');",
+            "console.log('tarefas_criadas_total antes =', m ? m[1] : '0');"
+          ]}}]
         },
         {
-          "name": "POST criar (incrementa a métrica)",
+          "name": "5.8 POST criar tarefa (201 — incrementar contador)",
           "request": {
             "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/tarefas",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "tarefas"
-              ]
-            },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/tarefas", "host": ["{{baseUrl}}"], "path": ["tarefas"] },
+            "description": "Cria tarefa com prioridade ALTA (mock é ignorado). O Counter incrementa após o persist.",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"titulo\": \"Medir criação\",\n  \"prioridade\": \"ALTA\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
+              "options": { "raw": { "language": "json" } }
             }
           },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status 201', () => pm.response.to.have.status(201));"
-                ]
-              }
-            }
-          ]
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Status 201', () => pm.response.to.have.status(201));"
+          ]}}]
         },
         {
-          "name": "GET métrica DEPOIS (+1)",
+          "name": "5.9 GET métricas — validar incremento (+1)",
           "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/q/metrics",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "q",
-                "metrics"
-              ]
-            }
+            "method": "GET", "header": [],
+            "url": { "raw": "{{baseUrl}}/q/metrics", "host": ["{{baseUrl}}"], "path": ["q", "metrics"] },
+            "description": "Prova que tarefas_criadas_total aumentou exatamente 1 (depois = antes + 1). Cobre req 10."
           },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
-                  "const m = pm.response.text().match(/^tarefas_criadas_total(?:\\{[^}]*\\})?\\s+([0-9.eE+-]+)/m);",
-                  "const depois = m ? parseFloat(m[1]) : 0; const antes = parseFloat(pm.collectionVariables.get('metricaAntes'));",
-                  "console.log('tarefas_criadas_total depois =', depois);",
-                  "pm.test('Contador aumentou em 1', () => pm.expect(depois).to.eql(antes + 1));"
-                ]
-              }
-            }
-          ]
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "const m = pm.response.text().match(/^tarefas_criadas_total(?:\\{[^}]*\\})?\\s+([0-9.eE+-]+)/m);",
+            "const depois = m ? parseFloat(m[1]) : 0; const antes = parseFloat(pm.collectionVariables.get('metricaAntes'));",
+            "console.log('tarefas_criadas_total depois =', depois);",
+            "pm.test('Contador aumentou em 1', () => pm.expect(depois).to.eql(antes + 1));"
+          ]}}]
         }
       ]
     }

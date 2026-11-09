@@ -3,7 +3,7 @@
 API REST para controle de tarefas, desenvolvida como projeto final da disciplina Introdução ao Quarkus.
 
 **Equipe:** Nome da equipe
-**Integrantes:** Integrante 1, Integrante 2, Integrante 3, Integrante 4, Integrante 5
+**Integrantes:** André Rodrigues de Oliveira, Everton Lucas Fernandes, Danilo Tanaka Vieira Marques, Rhuan Elias Botelho de Azeredo, Thiago Banfi Credico
 
 ## Problema resolvido
 
@@ -23,14 +23,14 @@ A API permite cadastrar, consultar, alterar e excluir tarefas, cada uma com tít
 Serviço externo (mock de prioridade, porta 8089), em um terminal:
 
 ```bash
-java mock/PrioridadeMock.java
+java mock/MockController.java 8090
 ```
 
 No Windows (`cmd.exe`), na raiz do projeto:
 
 ```bat
-cd /d ".\tarefas"
-java mock\PrioridadeMock.java 8089
+cd /d ".\trabalhos"
+java mock/MockController.java 8090
 ```
 
 API (profile `dev`, porta 8080), em outro terminal:
@@ -40,6 +40,8 @@ API (profile `dev`, porta 8080), em outro terminal:
 ```
 
 Para simular o serviço externo fora do ar, basta encerrar o mock com Ctrl+C.
+
+Ou via Postman, a API externa/mock após iniciar MockController.java 8090 é capaz de simular o Ctrl+C em e "PrioridadeMock,java"    
 
 Testes automatizados:
 
